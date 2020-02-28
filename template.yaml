@@ -4,11 +4,44 @@ Description: Gracefully drain k8s nodes when instances are terminated (uksb-1pf6
 
 Parameters:
 
-  AutoScalingGroup:
-    Type: String
+  AutoScalingGroups:
+    Type: CommaDelimitedList
 
   EksCluster:
     Type: String
+
+  RookCephVolumesNamespace:
+    Type: String
+
+  DetachRookVolumes:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+
+  RookCephCrashCollectorsNamespace:
+    Type: String
+
+  DeleteRookCephCrashCollector:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+
+  DeleteNode:
+    Type: String
+    AllowedValues:
+      - "true"
+      - "false"
+
+  PodEvictionTimeout:
+    Type: Number
+    Default: 120
+
+  PodDeleteGracePeriod:
+    Type: Number
+    Default: 0
+    Description: Pod deletion grace period after eviction timeout
 
 Globals:
     Function:
@@ -16,10 +49,17 @@ Globals:
 
 Resources:
 
-    LifecycleHook:
+    LifecycleLaunchingHook:
       Type: AWS::AutoScaling::LifecycleHook
       Properties:
-        AutoScalingGroupName: !Ref AutoScalingGroup
+        AutoScalingGroupName: !Ref AutoScalingGroups
+        HeartbeatTimeout: 450
+        LifecycleTransition: autoscaling:EC2_INSTANCE_LAUNCHING
+
+    LifecycleTerminatingHook:
+      Type: AWS::AutoScaling::LifecycleHook
+      Properties:
+        AutoScalingGroupName: !Ref AutoScalingGroups
         HeartbeatTimeout: 450
         LifecycleTransition: autoscaling:EC2_INSTANCE_TERMINATING
 
@@ -61,6 +101,13 @@ Resources:
           Environment:
             Variables:
               CLUSTER_NAME: !Ref EksCluster
+              ROOK_CEPH_VOLUMES_NAMESPACE: !Ref RookCephVolumesNamespace
+              DETACH_ROOK_VOLUMES: !Ref DetachRookVolumes
+              ROOK_CEPH_CRASHCOLLECTORS_NAMESPACE: !Ref RookCephCrashCollectorsNamespace
+              DELETE_ROOK_CEPH_CRASHCOLLECTOR: !Ref DeleteRookCephCrashCollector
+              DELETE_NODE: !Ref DeleteNode
+              POD_EVICTION_TIMEOUT: !Ref PodEvictionTimeout
+              POD_DELETE_GRACE_PERIOD: !Ref PodDeleteGracePeriod
           Role: !GetAtt DrainerRole.Arn
           Events:
             TerminationEvent:
@@ -70,10 +117,10 @@ Resources:
                   source:
                     - aws.autoscaling
                   detail-type:
+                    - EC2 Instance-launch Lifecycle Action
                     - EC2 Instance-terminate Lifecycle Action
                   detail:
-                    AutoScalingGroupName:
-                      - !Ref AutoScalingGroup
+                    AutoScalingGroupName: !Ref AutoScalingGroups
 
     Permission:
       Type: AWS::Lambda::Permission

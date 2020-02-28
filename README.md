@@ -1,15 +1,21 @@
-[![Build Status](https://travis-ci.org/aws-samples/amazon-k8s-node-drainer.svg?branch=master)](https://travis-ci.org/aws-samples/amazon-k8s-node-drainer)
+# Rook Amazon EKS Node Drainer
 
-# Amazon EKS Node Drainer
-
-This sample code provides a means to gracefully terminate nodes of an Amazon Elastic Container Service for Kubernetes 
-(Amazon EKS) cluster when managed as part of an Amazon EC2 Auto Scaling Group.
+This sample code provides a means to detach rook volumes and gracefully terminate nodes of an 
+Amazon Elastic Container Service for Kubernetes (Amazon EKS) cluster when managed as part of an Amazon EC2 Auto Scaling Group.
 
 The code provides an AWS Lambda function that integrates as an [Amazon EC2 Auto
 Scaling Lifecycle Hook](https://docs.aws.amazon.com/autoscaling/ec2/userguide/lifecycle-hooks.html).
-When called, the Lambda function calls the Kubernetes API to cordon and evict all evictable pods from the node being 
-terminated. It will then wait until all pods have been evicted before the Auto Scaling group continues to terminate the
-EC2 instance. The lambda may be killed by the function timeout before all evictions complete successfully, in which case
+
+When called during the launch event, the Lambda function will add an instance id to node name mapping to the "aws-instances"
+configmap under the "kube-system" namespace. This is done in order to help facilitate deletions where an instance is terminated
+outside a scaling in event; such as through a simple EC2 termination.
+
+When called during a termination event, the Lambda function calls the Kubernetes API to detach the rook volumes (to get rid of the node fencing), 
+cordon and evict all evictable pods, then delete the node from the node being terminated. It will wait up until a timeout for all pods to have been evicted before 
+each leftover pod is deleted using a graceful period; where if set to 0 will forcefully delete right away. 
+The Auto Scaling group then continues to terminate the EC2 instance. 
+
+The lambda may be killed by the function timeout before all evictions complete successfully, in which case
 the lifecycle hook may re-execute the lambda to try again. If the lifecycle heartbeat expires then termination of the EC2
 instance will continue regardless of whether or not draining was successful. You may need to increase the function and
 heartbeat timeouts in template.yaml if you have very long grace periods.
@@ -221,7 +227,6 @@ By default, built artifacts are written to the `.aws-sam/build` directory.
 
 ## Limitations
 
-This solution works on a per cluster per autoscaling group basis, multiple autoscaling groups will require a separate 
-deployment for each group.
+This solution works on a per cluster basis supporting multiple autoscaling groups.
 
 Certain types of pod cannot be evicted from a node, so this lambda will not attempt to evict DaemonSets or mirror pods.

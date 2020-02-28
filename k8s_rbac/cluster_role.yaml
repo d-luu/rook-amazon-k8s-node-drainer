@@ -3,6 +3,39 @@ apiVersion: rbac.authorization.k8s.io/v1
 metadata:
   name: lambda-cluster-access
 rules:
-  - apiGroups: [""]
-    resources: ["pods", "pods/eviction", "nodes"]
-    verbs: ["create", "list", "patch"]
+  - apiGroups:
+      - ""
+    resources:
+      - "pods"
+      - "pods/eviction"
+      - "nodes"
+    verbs:
+      - "create"
+      - "list"
+      - "patch"
+      - "delete"
+  - apiGroups:
+      - ""
+    resources:
+      - "configmaps"
+    resourceNames:
+      - "aws-instances"
+    verbs:
+      - "create"
+      - "get"
+      - "patch"
+  - apiGroups:
+      - "apps"
+    resources:
+      - "deployments"
+      - "replicasets"
+    verbs:
+      - "list"
+      - "delete"
+  - apiGroups:
+      - "rook.io"
+    resources:
+      - "volumes"
+    verbs:
+      - "list"
+      - "patch"

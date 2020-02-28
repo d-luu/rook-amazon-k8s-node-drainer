@@ -1,0 +1,29 @@
+name: RookEKSNodeDrainerFunction Build
+on:
+  push:
+    branches:
+      - master
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    container:
+      image: lambci/lambda:build-python3.7
+      env:
+        SAM_CLI_TELEMETRY: "0"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build
+        id: build
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          GIT_SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          echo "::set-output name=git_sha_short::${GIT_SHA_SHORT}"
+          sam build
+          cd .aws-sam/build/DrainerFunction/
+          zip -r ${GITHUB_WORKSPACE}/rook-eks-node-drainer-${GIT_SHA_SHORT}.zip .
+      - name: Upload artifact
+        uses: actions/upload-artifact@v1
+        with:
+          name: RookEKSNodeDrainerFunction
+          path: rook-eks-node-drainer-${{ steps.build.outputs.git_sha_short }}.zip
