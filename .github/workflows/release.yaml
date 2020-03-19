@@ -1,0 +1,44 @@
+name: RookEKSNodeDrainerFunction Release
+on:
+  push:
+    tags:
+      - "v*"
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    container:
+      image: lambci/lambda:build-python3.7
+      env:
+        SAM_CLI_TELEMETRY: "0"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v2
+      - name: Build
+        id: build
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          GIT_SHA_SHORT=$(echo "${GITHUB_SHA}" | cut -c1-8)
+          echo "::set-output name=git_sha_short::${GIT_SHA_SHORT}"
+          sam build
+          cd .aws-sam/build/DrainerFunction/
+          zip -r ${GITHUB_WORKSPACE}/rook-eks-node-drainer-${GIT_SHA_SHORT}.zip .
+      - name: Create Release
+        id: create_release
+        uses: actions/create-release@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          tag_name: ${{ github.ref }}
+          release_name: Release ${{ github.ref }}
+          draft: false
+          prerelease: false
+      - name: Upload Release Asset
+        id: upload-release-asset
+        uses: actions/upload-release-asset@v1
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          upload_url: ${{ steps.create_release.outputs.upload_url }}
+          asset_path: rook-eks-node-drainer-${{ steps.build.outputs.git_sha_short }}.zip
+          asset_name: rook-eks-node-drainer-${{ steps.build.outputs.git_sha_short }}.zip
+          asset_content_type: application/zip
