@@ -10,30 +10,6 @@ Parameters:
   EksCluster:
     Type: String
 
-  RookCephVolumesNamespace:
-    Type: String
-
-  DetachRookVolumes:
-    Type: String
-    AllowedValues:
-      - "true"
-      - "false"
-
-  RookCephCrashCollectorsNamespace:
-    Type: String
-
-  DeleteRookCephCrashCollector:
-    Type: String
-    AllowedValues:
-      - "true"
-      - "false"
-
-  DeleteNode:
-    Type: String
-    AllowedValues:
-      - "true"
-      - "false"
-
   PodEvictionTimeout:
     Type: Number
     Default: 120
@@ -42,6 +18,61 @@ Parameters:
     Type: Number
     Default: 0
     Description: Pod deletion grace period after eviction timeout
+
+  RookCephOperatorNamespace:
+    Type: String
+    Default: 'rook-ceph'
+
+  RookCephOSDNamespace:
+    Type: String
+    Default: 'rook-ceph'
+
+  RookCephMonNamespace:
+    Type: String
+    Default: rook-ceph
+
+  RookCephVolumesNamespace:
+    Type: String
+    Default: 'rook-ceph'
+
+  RookCephCrashCollectorsNamespace:
+    Type: String
+    Default: 'rook-ceph'
+
+  DetachRookVolumes:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  UpdateCephCrushmap:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  DeleteRookCephCrashCollector:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  DeleteNode:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  ReloadRookCephCluster:
+    Type: String
+    AllowedValues:
+      - 'true'
+      - 'false'
+
+  WaitForRookCephHealthOKRetries:
+    Type: Number
+    Default: 0
+    Description: How many times to check for rook ceph health status to report back as HEALTH_OK
 
 Globals:
     Function:
@@ -87,6 +118,8 @@ Resources:
                     - ec2:DescribeInstances
                     - eks:DescribeCluster
                     - sts:GetCallerIdentity
+                    - logs:StartQuery
+                    - logs:GetQueryResults
                   Resource: '*'
         ManagedPolicyArns:
           - arn:aws:iam::aws:policy/service-role/AWSLambdaBasicExecutionRole
@@ -100,14 +133,34 @@ Resources:
           MemorySize: 256
           Environment:
             Variables:
-              CLUSTER_NAME: !Ref EksCluster
-              ROOK_CEPH_VOLUMES_NAMESPACE: !Ref RookCephVolumesNamespace
-              DETACH_ROOK_VOLUMES: !Ref DetachRookVolumes
-              ROOK_CEPH_CRASHCOLLECTORS_NAMESPACE: !Ref RookCephCrashCollectorsNamespace
-              DELETE_ROOK_CEPH_CRASHCOLLECTOR: !Ref DeleteRookCephCrashCollector
-              DELETE_NODE: !Ref DeleteNode
-              POD_EVICTION_TIMEOUT: !Ref PodEvictionTimeout
-              POD_DELETE_GRACE_PERIOD: !Ref PodDeleteGracePeriod
+              CLUSTER_NAME:
+                Ref: EksCluster
+              POD_EVICTION_TIMEOUT:
+                Ref: PodEvictionTimeout
+              POD_DELETE_GRACE_PERIOD:
+                Ref: PodDeleteGracePeriod
+              ROOK_CEPH_OPERATOR_NAMESPACE:
+                Ref: RookCephOperatorNamespace
+              ROOK_CEPH_OSD_NAMESPACE:
+                Ref: RookCephOSDNamespace
+              ROOK_CEPH_MON_NAMESPACE:
+                Ref: RookCephMonNamespace
+              ROOK_CEPH_VOLUMES_NAMESPACE:
+                Ref: RookCephVolumesNamespace
+              ROOK_CEPH_CRASHCOLLECTORS_NAMESPACE:
+                Ref: RookCephCrashCollectorsNamespace
+              DETACH_ROOK_VOLUMES:
+                Ref: DetachRookVolumes
+              UPDATE_CEPH_CRUSHMAP:
+                Ref: UpdateCephCrushmap
+              DELETE_ROOK_CEPH_CRASHCOLLECTOR:
+                Ref: DeleteRookCephCrashCollector
+              DELETE_NODE:
+                Ref: DeleteNode
+              RELOAD_ROOK_CEPH_CLUSTER:
+                Ref: ReloadRookCephCluster
+              WAIT_FOR_ROOK_CEPH_HEALTH_OK_RETRIES:
+                Ref: WaitForRookCephHealthOKRetries
           Role: !GetAtt DrainerRole.Arn
           Events:
             TerminationEvent:

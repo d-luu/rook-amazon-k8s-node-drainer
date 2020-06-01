@@ -1,0 +1,12 @@
+kind: Role
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: lambda-namespace-access
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - "pods/exec"
+    verbs:
+      - "create"
+      - "get"

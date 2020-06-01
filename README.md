@@ -138,11 +138,12 @@ aws cloudformation describe-stacks \
 ## Kubernetes Permissions
 
 After deployment there will be an IAM role associated with the lambda that needs to be mapped to a user or group in 
-the EKS cluster. To create the Kubernetes `ClusterRole` and `ClusterRoleBinding` run the following shell command from the root 
-directory of the project:
+the EKS cluster. To create the Kubernetes RBAC policies run the following shell command from the root 
+directory of the project on set the namespace corresponding to the rook ceph operator's namespace:
 
+For example, if the rook-ceph-operator resides in the rook-ceph-system namespace:
 ```bash
-kubectl apply -R -f k8s_rbac/
+kubectl -n rook-ceph-system apply -R -f k8s_rbac/
 ```
 
 You may now create the mapping to the IAM role created when deploying the Drainer function. 

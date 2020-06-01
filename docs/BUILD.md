@@ -143,10 +143,37 @@ kube_config_object: the object where a kube config is stored in S3
  * optional
    * either this must be set or `cluster_name` must be set
    
+pod_eviction_timeout: the time, in seconds, to wait for pod eviction to complete before continuing
+ * defaults to 120
+
+pod_delete_grace_period: the grace period, in seconds, to set for the leftover failed to evict pods for deletion
+ * runs after pod eviction
+ * optional
+ 
+rook_ceph_operator_namespace: the rook ceph namespace where the operator resides
+ * for use in Rook deployments
+ * default to `rook-ceph`
+ * optional
+
+rook_ceph_osd_namespace: the rook ceph namespace where the OSDs reside
+ * for use in Rook deployments
+ * default to `rook-ceph`
+ * optional
+
+rook_ceph_mon_namespace: the rook ceph namespace where the MONs reside
+ * for use in Rook deployments
+ * default to `rook-ceph`
+ * optional
+
 rook_ceph_volumes_namespace: the rook ceph namespace where the rook volumes reside (and also where the operator resides)
  * for use in Rook deployments
  * defaults to `rook-ceph`
  * optional
+
+rook_ceph_crashcollectors_namespace: the rook ceph namespace where the crash collectors reside
+ * for use in Rook deployments
+ * default to `rook-ceph`
+ * optional 
 
 detach_rook_volumes: indicates whether to detach rook ceph volumes from drained/deleted nodes
  * for use in Rook deployments
@@ -154,9 +181,10 @@ detach_rook_volumes: indicates whether to detach rook ceph volumes from drained/
  * defaults to 'true'
  * optional
  
-rook_ceph_crashcollectors_namespace: the rook ceph namespace where the crash collectors reside
+update_ceph_crushmap: indicates whether to update the ceph crushmap by removing OSDs and hosts on node drain
  * for use in Rook deployments
- * default to `rook-ceph`
+ * `rook_ceph_operator_namespace` and `rook_ceph_osd_namespace` must be non-empty
+ * defaults to 'true'
  * optional
 
 delete_rook_ceph_crashcollector: indicates whether to delete the rook ceph crash collector from drained/deleted nodes
@@ -169,9 +197,12 @@ delete_node: indicates whether to delete the node after draining
  * defaults to 'true'
  * optional
 
-pod_eviction_timeout: the time, in seconds, to wait for pod eviction to complete before continuing
- * defaults to 120
+reload_rook_cephcluster: indicates whether to reload the cephcluster information
+ * used to workaround an issue that holds things up when a node is deleted and crash collector can't find the node
+ * toggles the 'allowUnsupported' setting for the 'cephVersion' in the cephcluster config
+ * defaults to 'true'
 
-pod_delete_grace_period: the grace period, in seconds, to set for the leftover failed to evict pods for deletion
- * runs after pod eviction
- * optional
+wait_for_rook_ceph_health_ok: indicates whether to wait for rook ceph status to return HEALTH_OK
+ * only tries up to 10 times
+ * waits 10 seconds between checks
+ * defaults to 'true'

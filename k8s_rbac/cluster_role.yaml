@@ -14,28 +14,51 @@ rules:
       - "list"
       - "patch"
       - "delete"
-  - apiGroups:
-      - ""
-    resources:
-      - "configmaps"
-    resourceNames:
-      - "aws-instances"
-    verbs:
-      - "create"
-      - "get"
-      - "patch"
+      - "deletecollection"
   - apiGroups:
       - "apps"
     resources:
       - "deployments"
+      - "deployments/scale"
       - "replicasets"
+    verbs:
+      - "delete"
+      - "deletecollection"
+      - "list"
+      - "patch"
+  - apiGroups:
+      - "batch"
+    resources:
+      - "jobs"
     verbs:
       - "list"
       - "delete"
+  - apiGroups:
+      - ""
+    resources:
+      - "configmaps"
+    verbs:
+      - "deletecollection"
+      - "get"
+      - "patch"
+  - apiGroups:
+      - ""
+    resources:
+      - "secrets"
+    verbs:
+      - "get"
+      - "patch"
   - apiGroups:
       - "rook.io"
     resources:
       - "volumes"
     verbs:
       - "list"
+      - "patch"
+  - apiGroups:
+      - "ceph.rook.io"
+    resources:
+      - "cephclusters"
+    verbs:
+      - "get"
       - "patch"
